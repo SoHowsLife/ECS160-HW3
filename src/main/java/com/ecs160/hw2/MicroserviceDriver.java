@@ -70,5 +70,26 @@ public class MicroserviceDriver {
             System.out.print(post.getContent() + " ");
             System.out.println(response.body());
         }
+        for (Post reply : post.getReplies()){
+            processReply(reply);
+        }
+    }
+    public static void processReply(Post post) throws URISyntaxException, IOException, InterruptedException {
+        String postContent = post.getContent().replace("\n","\\n").replace("\"", "\\\"");
+        String content = "{\"postContent\": \"" + postContent + "\"}";
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest moderate = HttpRequest.newBuilder()
+                .uri(new URI("http://localhost:30001/moderate"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(content, StandardCharsets.UTF_8))
+                .build();
+        HttpResponse<String> response = client.send(moderate, HttpResponse.BodyHandlers.ofString());
+        if (response.body().equals("FAILED")) {
+            System.out.println("--> [DELETED]");
+        }
+        else{
+            System.out.print("--> " + post.getContent() + " ");
+            System.out.println(response.body());
+        }
     }
 }
