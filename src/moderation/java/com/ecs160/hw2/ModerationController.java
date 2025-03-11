@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @RestController
@@ -30,7 +31,7 @@ public class ModerationController {
             HttpRequest hashtag = HttpRequest.newBuilder()
                     .uri(new URI("http://localhost:30002/hashtag"))
                     .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString("{\"postContent\": \"" + request.getPostContent() + "\"}"))
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"postContent\": \"" + request.getPostContent().replace("\"", "\\\"").replace("\n","\\n") + "\"}", StandardCharsets.UTF_8))
                     .build();
 
             HttpResponse<String> response = client.send(hashtag, HttpResponse.BodyHandlers.ofString());

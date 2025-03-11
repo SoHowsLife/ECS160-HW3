@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 public class HashtagController {
-    private final String promptTemp = "Please generate a hashtag for this social media post. Only reply with the hashtags:";
+    private final String promptTemp = "Please generate a hashtag for this social media post. Only reply with the hashtags. DO NOT ADD ANYTHING ELSE:";
     @PostMapping("/hashtag")
     public String hashtag(@RequestBody MyRequest request) {
         String host = "http://localhost:11434/";
