@@ -19,26 +19,34 @@ public class MicroserviceDriver {
 
     public static void main(String[] args) throws FileNotFoundException {
         String filePath = "input.json";
+        boolean weighted = false;
         Options options = new Options();
 
         Option fileOption = new Option("f", "file", true, "Path to the input JSON file");
         fileOption.setRequired(false);
         options.addOption(fileOption);
 
+        Option weightedOption = new Option("w", "weighted", false, "Use weighted average (true|false)");
+        weightedOption.setRequired(false);
+        options.addOption(weightedOption);
+
         CommandLineParser clParser = new DefaultParser();
 
         try {
             CommandLine cmd = clParser.parse(options, args);
             filePath = cmd.hasOption("file") ? cmd.getOptionValue("file") : "input.json";
-
+            weighted = cmd.hasOption("weighted");
         } catch (ParseException e) {
             System.out.println("Error parsing command-line arguments: " + e.getMessage());
             System.exit(1);
         }
 
+        PostConfig.getConfig().setWeighted(weighted);
+        PostConfig.getConfig().setFileName(filePath);
+
         try {
             PostParser pParser = new PostParser();
-            List<Post> posts = pParser.parseJson(filePath);
+            List<Post> posts = pParser.parseJson(PostConfig.getConfig().getFileName());
             List<Post> sortedPosts = posts.stream()
                     .sorted(Comparator.comparingInt(Post::getLikeCount).reversed())
                     .limit(10)
@@ -53,7 +61,8 @@ public class MicroserviceDriver {
         }
     }
 
-    public static void processPost(Post post) throws URISyntaxException, IOException, InterruptedException {
+    public static String processPost(Post post) throws URISyntaxException, IOException, InterruptedException {
+        StringBuilder result = new StringBuilder();
         String postContent = post.getContent().replace("\n","\\n").replace("\"", "\\\"");
         String content = "{\"postContent\": \"" + postContent + "\"}";
         HttpClient client = HttpClient.newHttpClient();
@@ -64,17 +73,18 @@ public class MicroserviceDriver {
                 .build();
         HttpResponse<String> response = client.send(moderate, HttpResponse.BodyHandlers.ofString());
         if (response.body().equals("FAILED")) {
-            System.out.println("[DELETED]");
+            result.append("[DELETED]\n");
         }
         else{
-            System.out.print(post.getContent() + " ");
-            System.out.println(response.body());
+            result.append(post.getContent()).append(" ").append(response.body()).append("\n");
         }
         for (Post reply : post.getReplies()){
-            processReply(reply);
+            result.append(processReply(reply));
         }
+        return result.toString();
     }
-    public static void processReply(Post post) throws URISyntaxException, IOException, InterruptedException {
+    public static String processReply(Post post) throws URISyntaxException, IOException, InterruptedException {
+        StringBuilder result = new StringBuilder();
         String postContent = post.getContent().replace("\n","\\n").replace("\"", "\\\"");
         String content = "{\"postContent\": \"" + postContent + "\"}";
         HttpClient client = HttpClient.newHttpClient();
@@ -84,12 +94,13 @@ public class MicroserviceDriver {
                 .POST(HttpRequest.BodyPublishers.ofString(content, StandardCharsets.UTF_8))
                 .build();
         HttpResponse<String> response = client.send(moderate, HttpResponse.BodyHandlers.ofString());
+        result.append("-->");
         if (response.body().equals("FAILED")) {
-            System.out.println("--> [DELETED]");
+            result.append("[DELETED]\n");
         }
         else{
-            System.out.print("--> " + post.getContent() + " ");
-            System.out.println(response.body());
+            result.append(post.getContent()).append(" ").append(response.body()).append("\n");
         }
+        return result.toString();
     }
 }

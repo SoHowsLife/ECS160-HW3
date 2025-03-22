@@ -91,6 +91,11 @@ public class Thread implements Post{
     }
 
     @Override
+    public void accept(PostVisitor visitor) {
+        visitor.visit(this);
+    }
+
+    @Override
     public Integer getLikeCount() {
         return likeCount;
     }

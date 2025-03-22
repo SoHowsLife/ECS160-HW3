@@ -44,11 +44,14 @@ public class SinglePost implements Post{
         this.likeCount = likeCount;
     }
 
-
-
     @Override
     public List<Post> getReplies() {
         return List.of();
+    }
+
+    @Override
+    public void accept(PostVisitor visitor) {
+        visitor.visit(this);
     }
 
     @Override

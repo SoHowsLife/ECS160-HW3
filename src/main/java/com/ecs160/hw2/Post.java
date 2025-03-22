@@ -14,4 +14,5 @@ public interface Post {
     String getTimestamp();
     Integer getLikeCount();
     List<Post> getReplies();
+    void accept(PostVisitor visitor);
 }
